@@ -1,0 +1,75 @@
+$ItemWidthHeight : 60px;
+$HardBorder : black 5px solid;
+$LightBorder : black 1px solid;
+
+.container{
+  background: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+.sudokuPane{
+  width: $ItemWidthHeight * 9;
+  border: $HardBorder;
+}
+
+.sudokuItem{
+  border: $LightBorder;
+  height: $ItemWidthHeight;
+  width: $ItemWidthHeight;
+  user-select: none;
+  text-align: center;
+  line-height: $ItemWidthHeight;
+  overflow: hidden;
+  font-size: 30px;
+}
+.rightBorder{
+  border-right: $HardBorder;
+}
+
+.bottomBorder{
+  border-bottom: $HardBorder;
+}
+.inputItem{
+  color : #33b4f1;
+}
+
+.selectItem{
+  background: #ffec49;
+}
+
+.warmingItem{
+  color: red;
+}
+
+.editBarContainer{
+  background: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 30px;
+}
+.editBarItem{
+  border: $LightBorder;
+  height: $ItemWidthHeight;
+  width: $ItemWidthHeight;
+  user-select: none;
+  text-align: center;
+  line-height: $ItemWidthHeight;
+  overflow: hidden;
+  font-size: 30px;
+}
+.editBarItem:active{
+  background: #ffec49;
+}
+
+.defaultButton{
+  height: $ItemWidthHeight;
+  width: $ItemWidthHeight;
+}
+
+.enableMarkModel{
+  background: #ffec49;
+}

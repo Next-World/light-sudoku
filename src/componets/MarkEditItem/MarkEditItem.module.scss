@@ -1,0 +1,18 @@
+
+$ItemWidthHeight : 60px;
+.container{
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+}
+
+.markItem{
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
+  line-height:20px;
+  text-align: center;
+  color: black;
+}

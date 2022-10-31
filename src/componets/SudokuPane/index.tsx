@@ -1,14 +1,9 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import SudokuPaneStyle from './SudokuPane.module.scss'
 import MarkEditItem from "../MarkEditItem";
+import type {Location,EditMark} from "./SudokuPane";
+import {checkSudokuIsValid} from '../../utils/sudokuUtil'
 
-interface Location {
-    row : number,
-    col : number,
-    currentValue : number
-}
-
-type EditMark = number[]
 
 function SudokuPane(){
     const initLocation : Location = {row : -1,col : -1, currentValue : -1}
@@ -48,6 +43,10 @@ function SudokuPane(){
     const initialEditMarks : EditMark[][] = InitEditMarks()
     const [editMarks,setEditMarks] = useState<EditMark[][]>(initialEditMarks)
 
+    useEffect(()=>{
+       let newWarmingList =  checkSudokuIsValid(editGridData);
+       setWarmingList(newWarmingList)
+    },[editGridData])
 
     const onItemClickHandler = (col : number, row : number, value : string) => {
         console.log("col = " + col + ",row = "  + row)
@@ -56,31 +55,6 @@ function SudokuPane(){
         setSelectLocation(selectLocation)
     }
 
-    const CheckIfWarming = (row : number, col : number) =>{
-        // let warmingList : Location[] = []
-        // for (let i = 0; i < 9; i++){
-        //     if(oldGridData[row][i] === newValue){
-        //         warmingList.push({row : row,col : i,currentValue : parseInt(newValue)})
-        //     }
-        // }
-        // for (let i = 0; i < 9; i++){
-        //     if(oldGridData[i][col] === newValue){
-        //         warmingList.push({row : i,col : col,currentValue : parseInt(newValue)})
-        //     }
-        // }
-        // const startRow : number = Math.floor(row / 3) * 3 + 1
-        // const startCol : number = Math.floor( col / 3) * 3 + 1
-        // console.log("startRow = %i, startCol = %i,row = %i, col = %i",startRow,startCol,row,col)
-        // for(let i = startRow; i < startRow + 3; i++){
-        //     for(let j = startCol; j < startCol + 3; j++){
-        //         if(oldGridData[i][j] === newValue){
-        //             warmingList.push({row : i,col : j,currentValue : parseInt(newValue)})
-        //         }
-        //     }
-        // }
-        //
-        // return warmingList;
-    }
 
     const onOptionNumberClickHandler = (value : number) => {
         console.log("onclick value = " + value);
@@ -126,11 +100,31 @@ function SudokuPane(){
             if(initialGridData[currentRow][currentCol] !== "0"){
                 return newGridData;
             }
+            if(prevEditGridData[currentRow][currentCol] === value.toString()){
+                value = 0;
+            }
             newGridData[currentRow] = [...prevEditGridData[currentRow]]
             newGridData[currentRow][currentCol] = value.toString();
             console.log(newGridData[currentRow][currentCol])
             return newGridData
         }))
+
+        //清空标记
+        setEditMarks((prevState)=>{
+            const currentRow = selectLocation.row;
+            const currentCol = selectLocation.col;
+            let newEditMarks : EditMark[][] = [...prevState]
+
+            let editMarkItem : EditMark = [...prevState[currentRow][currentCol]]
+            editMarkItem.fill(0)
+            newEditMarks[currentRow] = [...prevState[currentRow]]
+            newEditMarks[currentRow][currentCol] = [...editMarkItem]
+            return newEditMarks
+        })
+
+        setSelectLocation((prevstate)=>{
+            return {...prevstate,currentValue: value}
+        })
     }
 
 
@@ -162,7 +156,8 @@ function SudokuPane(){
                                                 ${((col + 1 )% 3 === 0 && col !== 8 ? SudokuPaneStyle.rightBorder : null)} 
                                                 ${((row + 1 ) % 3 === 0 && row !== 8 ? SudokuPaneStyle.bottomBorder : null)}
                                                 ${initialGridData[row][col] === "0" ? SudokuPaneStyle.inputItem : null}
-                                                ${(row === selectLocation.row && col === selectLocation.col) || value === selectLocation.currentValue.toString() 
+                                                ${(row === selectLocation.row && col === selectLocation.col) || 
+                                                    (value === selectLocation.currentValue.toString() && selectLocation.currentValue !== 0)
                                                     ? SudokuPaneStyle.selectItem : null}
                                                 ${checkIfInWarmingList(row,col) ? SudokuPaneStyle.warmingItem : null}`}
                                     onClick={()=>(onItemClickHandler(col,row,value))}>
@@ -181,7 +176,10 @@ function SudokuPane(){
                     <tr>
                         {optionNumberList.map(((value, index) =>
                             <td key = {value}
-                                className={SudokuPaneStyle.editBarItem}
+                                className={`${SudokuPaneStyle.editBarItem} 
+                                ${(selectLocation.currentValue === value && 
+                                    initialGridData[selectLocation.row][selectLocation.col] === "0") ?
+                                    SudokuPaneStyle.editBarItemSelect : null}`}
                                 onClick={()=>(onOptionNumberClickHandler(value))}>
                                 {value}
                             </td>))}

@@ -1,4 +1,4 @@
-import type {Location} from "../componets/SudokuPane/SudokuPane";
+import type {Location} from "../components/SudokuPane/SudokuPane";
 
 
 function checkSudokuIsValid(grid : string[][]) : Location[] {

@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.css';
-import SudokuPane from "./componets/SudokuPane";
+import SudokuPane from "./components/SudokuPane";
 
 function App() {
   return (

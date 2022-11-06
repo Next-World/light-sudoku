@@ -5,7 +5,7 @@ import SudokuPane from "./components/SudokuPane";
 function App() {
   return (
     <div className="App">
-        <h1>Test</h1>
+        <h1>Light Sudoku</h1>
         <SudokuPane />
     </div>
   );

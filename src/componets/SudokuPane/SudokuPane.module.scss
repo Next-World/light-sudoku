@@ -44,14 +44,16 @@ $LightBorder : black 1px solid;
   color: red;
 }
 
-.editBarContainer{
+.editContainer{
   background: white;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 30px;
+  margin-top: 20px;
+  flex-direction: column;
 }
-.editBarItem{
+
+.editNumberItem{
   border: $LightBorder;
   height: $ItemWidthHeight;
   width: $ItemWidthHeight;
@@ -61,19 +63,31 @@ $LightBorder : black 1px solid;
   overflow: hidden;
   font-size: 30px;
 }
-.editBarItem:active{
+.editNumberItem:active{
   background: #ffec49;
 }
 
-.editBarItemSelect{
+.editNumberItemSelect{
   background: #ffec49;
+}
+
+.editOptionContainer{
+  width: $ItemWidthHeight * 10 + 60px;
+  display: flex;
+  justify-content: right;
+  margin-bottom: 10px;
 }
 
 .defaultButton{
   height: $ItemWidthHeight;
   width: $ItemWidthHeight;
+  margin: 3px;
 }
 
 .enableMarkModel{
+  background: #ffec49;
+}
+
+.enableEditModel{
   background: #ffec49;
 }

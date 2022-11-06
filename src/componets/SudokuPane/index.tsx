@@ -31,9 +31,9 @@ function SudokuPane(){
         return ans;
     }
     let sourceStr = "021600490380194000500070600045702100960050074002309850009020008000936045037008960"
-    const initialGridData :string[][] = strToDataArray(sourceStr)
+    const tempInitialGridData :string[][] = strToDataArray(sourceStr)
 
-
+    const [initialGridData,setInitialGridData] = useState<string[][]>(tempInitialGridData)
     const [selectLocation,setSelectLocation] = useState<Location>(initLocation)
     const [editGridData,setEditGridData] = useState<string[][]>(initialGridData)
     const initialWarmingList : Location[] = []
@@ -42,6 +42,7 @@ function SudokuPane(){
     // const emptyMarkItem : EditMark = new Array<number[]>(3).fill(new Array<number>(3).fill(0))
     const initialEditMarks : EditMark[][] = InitEditMarks()
     const [editMarks,setEditMarks] = useState<EditMark[][]>(initialEditMarks)
+    const [editModel,setEditModel]  = useState<boolean>(false)
 
     useEffect(()=>{
        let newWarmingList =  checkSudokuIsValid(editGridData);
@@ -61,7 +62,7 @@ function SudokuPane(){
 
 
         //标记模式
-        if(markModel){
+        if(markModel && !editModel){
             setEditMarks((prevState)=>{
                 const currentRow = selectLocation.row;
                 const currentCol = selectLocation.col;
@@ -113,6 +114,10 @@ function SudokuPane(){
         setEditMarks((prevState)=>{
             const currentRow = selectLocation.row;
             const currentCol = selectLocation.col;
+            if(currentRow === -1 || currentCol === -1){
+                return prevState
+            }
+
             let newEditMarks : EditMark[][] = [...prevState]
 
             let editMarkItem : EditMark = [...prevState[currentRow][currentCol]]
@@ -140,6 +145,50 @@ function SudokuPane(){
     const changeEditMarkHandler = () =>{
         const newMarkModel : boolean = !markModel;
         setMarkModel(newMarkModel)
+    }
+
+    const changeEditModelHandler = (newEditModel : boolean) =>{
+        setEditModel(newEditModel)
+        if(newEditModel){
+            //清空标记
+            setEditMarks((prevState)=>{
+                const currentRow = selectLocation.row;
+                const currentCol = selectLocation.col;
+                if(currentRow === -1 || currentCol === -1){
+                    return prevState
+                }
+
+                let newEditMarks : EditMark[][] = [...prevState]
+
+                let editMarkItem : EditMark = [...prevState[currentRow][currentCol]]
+                editMarkItem.fill(0)
+                newEditMarks[currentRow] = [...prevState[currentRow]]
+                newEditMarks[currentRow][currentCol] = [...editMarkItem]
+                return newEditMarks
+            })
+
+            //初始化数组清空
+            let newInitialGridData : string[][]  = []
+            for(let i = 0; i < initialGridData.length; i++){
+                newInitialGridData[i] = Array.from({length:9},()=>"0")
+                setInitialGridData(newInitialGridData)
+            }
+            let newEditGridData : string[][] = [];
+            for(let i = 0; i < editGridData.length; i++){
+                newEditGridData[i] = Array.from({length:9},()=>"0")
+            }
+            setEditGridData(newEditGridData)
+        } else {
+            let newInitialGridData : string[][] = [];
+            for(let i = 0; i < initialGridData.length; i++){
+                newInitialGridData[i] = Array.from({length : 9},()=>"0")
+                for(let j = 0; j < initialGridData[i].length; j++){
+                    newInitialGridData[i][j] = editGridData[i][j];
+                }
+            }
+            setInitialGridData(newInitialGridData)
+        }
+
     }
 
     return (
@@ -170,31 +219,44 @@ function SudokuPane(){
                 </table>
             </div>
         </div>
-        <div className={SudokuPaneStyle.editBarContainer}>
+        <div className={SudokuPaneStyle.editContainer}>
+            <div className={SudokuPaneStyle.editOptionContainer}>
+                <button onClick={changeEditMarkHandler}
+                        className={`${markModel ? SudokuPaneStyle.enableMarkModel : null} 
+                            ${SudokuPaneStyle.defaultButton}`}
+                        disabled={editModel}
+                >
+                    笔记
+                </button>
+                <button className={`${SudokuPaneStyle.defaultButton}
+                                    ${editModel ? SudokuPaneStyle.enableEditModel : null}`}
+                        onClick={()=>{changeEditModelHandler(!editModel)}}
+                >
+                    编辑模式
+                </button>
+            </div>
             <table>
                 <tbody>
                     <tr>
                         {optionNumberList.map(((value, index) =>
                             <td key = {value}
-                                className={`${SudokuPaneStyle.editBarItem} 
+                                className={`${SudokuPaneStyle.editNumberItem} 
                                 ${(selectLocation.currentValue === value && 
+                                    selectLocation.row !== -1 && selectLocation.col !== -1 &&
                                     initialGridData[selectLocation.row][selectLocation.col] === "0") ?
-                                    SudokuPaneStyle.editBarItemSelect : null}`}
+                                    SudokuPaneStyle.editNumberItemSelect : null}`}
                                 onClick={()=>(onOptionNumberClickHandler(value))}>
                                 {value}
                             </td>))}
                             <td key = {0}
-                                className={SudokuPaneStyle.editBarItem}
+                                className={SudokuPaneStyle.editNumberItem}
                                 onClick={()=>(onOptionNumberClickHandler(0))}>
                                 X
                             </td>
                     </tr>
                 </tbody>
             </table>
-            <button onClick={changeEditMarkHandler}
-                    className={`${markModel ? SudokuPaneStyle.enableMarkModel : null} 
-                                ${SudokuPaneStyle.defaultButton}`}>笔记
-            </button>
+
         </div>
     </>
     )

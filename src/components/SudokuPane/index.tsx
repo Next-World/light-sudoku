@@ -2,24 +2,21 @@ import React, {useEffect, useState} from 'react';
 import SudokuPaneStyle from './SudokuPane.module.scss'
 import MarkEditItem from "../MarkEditItem";
 import type {Location,EditMark} from "./SudokuPane";
-import {checkSudokuIsValid} from '../../utils/sudokuUtil'
+import {checkSudokuIsValid, resolveSudoku, strToDataArray} from '../../utils/sudokuUtil'
+
+interface GetCurrentGridDataFunction {
+    (s : string[][]):void
+}
 
 
-function SudokuPane(){
-    const initLocation : Location = {row : -1,col : -1, currentValue : -1}
+interface SudokuPaneInitProps{
+    initialGridData? : string[][],
+    getCurrentGridData? : GetCurrentGridDataFunction
+}
 
+function SudokuPane(props : SudokuPaneInitProps){
     const optionNumberList : number[] = Array.from({length:9},(x,i)=>i + 1)
 
-    const strToDataArray = (str : string) => {
-        if(str.length !== 81){
-            return Array.from({length:9},()=>Array.from({length:9},()=>"0"))
-        }
-        let ans : string[][] = [];
-        for (let i = 0; i < 9; i++ ){
-            ans[i] = str.substring(i * 9,(i + 1) * 9).split("")
-        }
-        return ans;
-    }
     const InitEditMarks = ()=>{
         let ans = new Array(9).fill(null)
         for (let i in ans){
@@ -31,17 +28,30 @@ function SudokuPane(){
         return ans;
     }
     let sourceStr = "021600490380194000500070600045702100960050074002309850009020008000936045037008960"
-    const tempInitialGridData :string[][] = strToDataArray(sourceStr)
+    const tempInitialGridData :string[][] = props.initialGridData !== undefined ? props.initialGridData : strToDataArray(sourceStr)
 
+    // 初始化的数独
     const [initialGridData,setInitialGridData] = useState<string[][]>(tempInitialGridData)
+
+    // 当前选中的位置
+    const initLocation : Location = {row : -1,col : -1, currentValue : -1}
     const [selectLocation,setSelectLocation] = useState<Location>(initLocation)
+
+    // 当前编辑的数独
     const [editGridData,setEditGridData] = useState<string[][]>(initialGridData)
+
+    // 警告的列表
     const initialWarmingList : Location[] = []
     const [warmingList,setWarmingList] = useState<Location[]>(initialWarmingList)
+
+    // 是否标记模式
     const [markModel,setMarkModel] = useState<boolean>(false)
-    // const emptyMarkItem : EditMark = new Array<number[]>(3).fill(new Array<number>(3).fill(0))
+
+    // 标记模式的标记
     const initialEditMarks : EditMark[][] = InitEditMarks()
     const [editMarks,setEditMarks] = useState<EditMark[][]>(initialEditMarks)
+
+    // 是否开启标记模式
     const [editModel,setEditModel]  = useState<boolean>(false)
 
     useEffect(()=>{
@@ -49,6 +59,7 @@ function SudokuPane(){
        setWarmingList(newWarmingList)
     },[editGridData])
 
+    // 点击棋盘时更新位置
     const onItemClickHandler = (col : number, row : number, value : string) => {
         console.log("col = " + col + ",row = "  + row)
         const currentValue : number = value === "0" ? -1 : parseInt(value)
@@ -56,10 +67,28 @@ function SudokuPane(){
         setSelectLocation(selectLocation)
     }
 
+    // 清除当前选择格子的标记
+    const clearCurrentMark = () => {
+        setEditMarks((prevState)=>{
+            const currentRow = selectLocation.row;
+            const currentCol = selectLocation.col;
+            if(currentRow === -1 || currentCol === -1){
+                return prevState
+            }
 
+            let newEditMarks : EditMark[][] = [...prevState]
+
+            let editMarkItem : EditMark = [...prevState[currentRow][currentCol]]
+            editMarkItem.fill(0)
+            newEditMarks[currentRow] = [...prevState[currentRow]]
+            newEditMarks[currentRow][currentCol] = [...editMarkItem]
+            return newEditMarks
+        })
+    }
+
+    // 选择填充的数字
     const onOptionNumberClickHandler = (value : number) => {
         console.log("onclick value = " + value);
-
 
         //标记模式
         if(markModel && !editModel){
@@ -111,28 +140,14 @@ function SudokuPane(){
         }))
 
         //清空标记
-        setEditMarks((prevState)=>{
-            const currentRow = selectLocation.row;
-            const currentCol = selectLocation.col;
-            if(currentRow === -1 || currentCol === -1){
-                return prevState
-            }
-
-            let newEditMarks : EditMark[][] = [...prevState]
-
-            let editMarkItem : EditMark = [...prevState[currentRow][currentCol]]
-            editMarkItem.fill(0)
-            newEditMarks[currentRow] = [...prevState[currentRow]]
-            newEditMarks[currentRow][currentCol] = [...editMarkItem]
-            return newEditMarks
-        })
+        clearCurrentMark()
 
         setSelectLocation((prevstate)=>{
             return {...prevstate,currentValue: value}
         })
     }
 
-
+    // 检查是否应该提出警告
     const checkIfInWarmingList = (row : number, col : number) =>{
         for(let i in warmingList){
             if(row === warmingList[i].row && col === warmingList[i].col){
@@ -142,30 +157,19 @@ function SudokuPane(){
         return false;
     }
 
+    // 更改标记模式
     const changeEditMarkHandler = () =>{
         const newMarkModel : boolean = !markModel;
         setMarkModel(newMarkModel)
     }
 
+    // 更改编辑模式，用于手动导入数独的
     const changeEditModelHandler = (newEditModel : boolean) =>{
         setEditModel(newEditModel)
+        // 进入编辑模式，就把所有数据清空
         if(newEditModel){
             //清空标记
-            setEditMarks((prevState)=>{
-                const currentRow = selectLocation.row;
-                const currentCol = selectLocation.col;
-                if(currentRow === -1 || currentCol === -1){
-                    return prevState
-                }
-
-                let newEditMarks : EditMark[][] = [...prevState]
-
-                let editMarkItem : EditMark = [...prevState[currentRow][currentCol]]
-                editMarkItem.fill(0)
-                newEditMarks[currentRow] = [...prevState[currentRow]]
-                newEditMarks[currentRow][currentCol] = [...editMarkItem]
-                return newEditMarks
-            })
+            clearCurrentMark()
 
             //初始化数组清空
             let newInitialGridData : string[][]  = []
@@ -179,6 +183,7 @@ function SudokuPane(){
             }
             setEditGridData(newEditGridData)
         } else {
+            // 结束编辑模式，把当前编辑内容保存
             let newInitialGridData : string[][] = [];
             for(let i = 0; i < initialGridData.length; i++){
                 newInitialGridData[i] = Array.from({length : 9},()=>"0")
@@ -189,6 +194,33 @@ function SudokuPane(){
             setInitialGridData(newInitialGridData)
         }
 
+    }
+    // 解决数独
+    const handlerResolveSudoku = ()=>{
+        let errLocation = checkSudokuIsValid(editGridData)
+        if(errLocation.length !== 0){
+            alert("该数独无法解决")
+            return;
+        }
+        let newEditGridData = [...editGridData]
+        for(let i = 0; i < editGridData.length; i++){
+            newEditGridData[i] = [...editGridData[i]]
+        }
+        let canResolve = resolveSudoku(newEditGridData);
+        if(!canResolve){
+            alert("该数独无法解决")
+            return;
+        }
+        setEditGridData(newEditGridData)
+    }
+
+    // 恢复数独
+    const recoverSudoku = ()=>{
+        let newEditGridData = [...initialGridData]
+        for(let i = 0; i < initialGridData.length; i++){
+            newEditGridData[i] = [...initialGridData[i]]
+        }
+        setEditGridData(newEditGridData)
     }
 
     return (
@@ -233,6 +265,18 @@ function SudokuPane(){
                         onClick={()=>{changeEditModelHandler(!editModel)}}
                 >
                     编辑模式
+                </button>
+                <button
+                    className={`${SudokuPaneStyle.defaultButton}`}
+                    onClick={()=>{handlerResolveSudoku()}}
+                >
+                    解决
+                </button>
+                <button
+                    className={`${SudokuPaneStyle.defaultButton}`}
+                    onClick={()=>{recoverSudoku()}}
+                >
+                    恢复
                 </button>
             </div>
             <table>

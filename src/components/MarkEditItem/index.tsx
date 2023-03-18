@@ -8,7 +8,7 @@ interface MarkProp {
 function MarkEditItem(props : MarkProp){
     //const initialData : string[][] = [["1","2","3"],["4","5","6"],["7","8","9"]]
     const makeInitialMapValue = (markValues : number[]) =>{
-        console.log("mark=>" + markValues)
+        // console.log("mark=>" + markValues)
         let ans: number[][] = new Array(3)
         for(let i = 0; i < 3; i++){
             ans[i] = markValues.slice(i * 3, i * 3 + 3);

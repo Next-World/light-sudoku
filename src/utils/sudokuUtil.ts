@@ -79,6 +79,91 @@ function checkSudokuIsValid(grid : string[][]) : Location[] {
     return res
 }
 
+function strToDataArray(str : string) {
+    if(str.length !== 81){
+        return Array.from({length:9},()=>Array.from({length:9},()=>"0"))
+    }
+    let ans : string[][] = [];
+    for (let i = 0; i < 9; i++ ){
+        ans[i] = str.substring(i * 9,(i + 1) * 9).split("")
+    }
+    return ans;
+}
+
+function resolveSudoku(grid : string[][]){
+    // Helper function to check if a number is valid in a given row and column
+    function isValid(row: number, col: number, num: string): boolean {
+        // Check the row
+        for (let i = 0; i < 9; i++) {
+            if (grid[row][i] === num) {
+                return false;
+            }
+        }
+
+        // Check the column
+        for (let i = 0; i < 9; i++) {
+            if (grid[i][col] === num) {
+                return false;
+            }
+        }
+
+        // Check the 3x3 box
+        const boxRow = Math.floor(row / 3) * 3;
+        const boxCol = Math.floor(col / 3) * 3;
+        for (let i = boxRow; i < boxRow + 3; i++) {
+            for (let j = boxCol; j < boxCol + 3; j++) {
+                if (grid[i][j] === num) {
+                    return false;
+                }
+            }
+        }
+
+        // The number is valid in this position
+        return true;
+    }
+
+    // Helper function to find the next empty cell
+    function getNextEmptyCell(): [number, number] | null {
+        for (let row = 0; row < 9; row++) {
+            for (let col = 0; col < 9; col++) {
+                if (grid[row][col] === "0") {
+                    return [row, col];
+                }
+            }
+        }
+        return null;
+    }
+
+    // Recursive function to solve the puzzle
+    function solve(): boolean {
+        const nextCell = getNextEmptyCell();
+        if (nextCell === null) {
+            // The puzzle is solved
+            return true;
+        }
+
+        const [row, col] = nextCell;
+
+        for (let num = 1; num <= 9; num++) {
+            if (isValid(row, col, String(num))) {
+                grid[row][col] = String(num);
+                if (solve()) {
+                    return true;
+                }
+                grid[row][col] = "0";
+            }
+        }
+
+        // No valid number was found in this position
+        return false;
+    }
+    // Start solving the puzzle
+    return solve();
+}
+
+
 export {
-    checkSudokuIsValid
+    checkSudokuIsValid,
+    strToDataArray,
+    resolveSudoku
 }

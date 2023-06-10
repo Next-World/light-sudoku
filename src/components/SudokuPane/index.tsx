@@ -3,6 +3,7 @@ import SudokuPaneStyle from './SudokuPane.module.scss'
 import MarkEditItem from "../MarkEditItem";
 import type {Location,EditMark} from "./SudokuPane";
 import {checkSudokuIsValid, resolveSudoku, strToDataArray} from '../../utils/sudokuUtil'
+import {useImmer} from "use-immer";
 
 interface GetCurrentGridDataFunction {
     (s : string[][]):void
@@ -31,14 +32,14 @@ function SudokuPane(props : SudokuPaneInitProps){
     const tempInitialGridData :string[][] = props.initialGridData !== undefined ? props.initialGridData : strToDataArray(sourceStr)
 
     // 初始化的数独
-    const [initialGridData,setInitialGridData] = useState<string[][]>(tempInitialGridData)
+    const [initialGridData,setInitialGridData] = useImmer<string[][]>(tempInitialGridData)
 
     // 当前选中的位置
     const initLocation : Location = {row : -1,col : -1, currentValue : -1}
-    const [selectLocation,setSelectLocation] = useState<Location>(initLocation)
+    const [selectLocation,setSelectLocation] = useImmer<Location>(initLocation)
 
     // 当前编辑的数独
-    const [editGridData,setEditGridData] = useState<string[][]>(initialGridData)
+    const [editGridData,setEditGridData] = useImmer<string[][]>(initialGridData)
 
     // 警告的列表
     const initialWarmingList : Location[] = []
@@ -49,7 +50,7 @@ function SudokuPane(props : SudokuPaneInitProps){
 
     // 标记模式的标记
     const initialEditMarks : EditMark[][] = InitEditMarks()
-    const [editMarks,setEditMarks] = useState<EditMark[][]>(initialEditMarks)
+    const [editMarks,setEditMarks] = useImmer<EditMark[][]>(initialEditMarks)
 
     // 是否开启标记模式
     const [editModel,setEditModel]  = useState<boolean>(false)
@@ -63,26 +64,30 @@ function SudokuPane(props : SudokuPaneInitProps){
     const onItemClickHandler = (col : number, row : number, value : string) => {
         console.log("col = " + col + ",row = "  + row)
         const currentValue : number = value === "0" ? -1 : parseInt(value)
-        const selectLocation : Location = {col,row,currentValue}
-        setSelectLocation(selectLocation)
+        setSelectLocation(draft => {
+            draft.col = col;
+            draft.row = row;
+            draft.currentValue = currentValue;
+        })
     }
 
     // 清除当前选择格子的标记
     const clearCurrentMark = () => {
-        setEditMarks((prevState)=>{
+        setEditMarks((draft)=>{
             const currentRow = selectLocation.row;
             const currentCol = selectLocation.col;
             if(currentRow === -1 || currentCol === -1){
-                return prevState
+                return
             }
 
-            let newEditMarks : EditMark[][] = [...prevState]
-
-            let editMarkItem : EditMark = [...prevState[currentRow][currentCol]]
-            editMarkItem.fill(0)
-            newEditMarks[currentRow] = [...prevState[currentRow]]
-            newEditMarks[currentRow][currentCol] = [...editMarkItem]
-            return newEditMarks
+            // let newEditMarks : EditMark[][] = [...prevState]
+            //
+            // let editMarkItem : EditMark = [...prevState[currentRow][currentCol]]
+            // editMarkItem.fill(0)
+            // newEditMarks[currentRow] = [...prevState[currentRow]]
+            // newEditMarks[currentRow][currentCol] = [...editMarkItem]
+            // return newEditMarks
+            draft[currentRow][currentCol].fill(0)
         })
     }
 
@@ -92,12 +97,13 @@ function SudokuPane(props : SudokuPaneInitProps){
 
         //标记模式
         if(markModel && !editModel){
-            setEditMarks((prevState)=>{
+            setEditMarks((draft)=>{
                 const currentRow = selectLocation.row;
                 const currentCol = selectLocation.col;
-                let newEditMarks : EditMark[][] = [...prevState]
-
-                let editMarkItem : EditMark = [...prevState[currentRow][currentCol]]
+                // let newEditMarks : EditMark[][] = [...prevState]
+                //
+                // let editMarkItem : EditMark = [...prevState[currentRow][currentCol]]
+                let editMarkItem = draft[currentRow][currentCol]
                 if(value === 0){
                     editMarkItem.fill(0)
                 } else {
@@ -110,40 +116,36 @@ function SudokuPane(props : SudokuPaneInitProps){
                         console.log(editMarkItem)
                     }
                 }
-                newEditMarks[currentRow] = [...prevState[currentRow]]
-                newEditMarks[currentRow][currentCol] = [...editMarkItem]
-                return newEditMarks
+                // newEditMarks[currentRow] = [...prevState[currentRow]]
+                // newEditMarks[currentRow][currentCol] = [...editMarkItem]
+                // return newEditMarks
             })
             return;
         }
 
 
-        setEditGridData((prevEditGridData  => {
+        setEditGridData((draft  => {
             console.log("update grid")
             const currentRow = selectLocation.row;
             const currentCol = selectLocation.col;
             if(currentRow === -1 || currentCol === -1){
-                return prevEditGridData
+                return ;
             }
-            const newGridData : string[][] = [...prevEditGridData]
             console.log(initialGridData)
             if(initialGridData[currentRow][currentCol] !== "0"){
-                return newGridData;
+                return ;
             }
-            if(prevEditGridData[currentRow][currentCol] === value.toString()){
+            if(draft[currentRow][currentCol] === value.toString()){
                 value = 0;
             }
-            newGridData[currentRow] = [...prevEditGridData[currentRow]]
-            newGridData[currentRow][currentCol] = value.toString();
-            console.log(newGridData[currentRow][currentCol])
-            return newGridData
+            draft[currentRow][currentCol] = value.toString();
         }))
 
         //清空标记
         clearCurrentMark()
 
-        setSelectLocation((prevstate)=>{
-            return {...prevstate,currentValue: value}
+        setSelectLocation((draft)=>{
+            draft.currentValue = value
         })
     }
 
@@ -172,26 +174,22 @@ function SudokuPane(props : SudokuPaneInitProps){
             clearCurrentMark()
 
             //初始化数组清空
-            let newInitialGridData : string[][]  = []
-            for(let i = 0; i < initialGridData.length; i++){
-                newInitialGridData[i] = Array.from({length:9},()=>"0")
-                setInitialGridData(newInitialGridData)
-            }
-            let newEditGridData : string[][] = [];
-            for(let i = 0; i < editGridData.length; i++){
-                newEditGridData[i] = Array.from({length:9},()=>"0")
-            }
-            setEditGridData(newEditGridData)
+            setInitialGridData((draft)=>{
+                draft.forEach(((value) => value.fill("0")))
+            })
+
+            setEditGridData((draft)=>{
+                draft.forEach(((value) => value.fill("0")))
+            })
         } else {
             // 结束编辑模式，把当前编辑内容保存
-            let newInitialGridData : string[][] = [];
-            for(let i = 0; i < initialGridData.length; i++){
-                newInitialGridData[i] = Array.from({length : 9},()=>"0")
-                for(let j = 0; j < initialGridData[i].length; j++){
-                    newInitialGridData[i][j] = editGridData[i][j];
+            setInitialGridData(draft => {
+                for(let i = 0; i < initialGridData.length; i++){
+                    for(let j = 0; j < initialGridData[i].length; j++){
+                        draft[i][j] = editGridData[i][j];
+                    }
                 }
-            }
-            setInitialGridData(newInitialGridData)
+            })
         }
 
     }
@@ -202,25 +200,27 @@ function SudokuPane(props : SudokuPaneInitProps){
             alert("该数独无法解决")
             return;
         }
-        let newEditGridData = [...editGridData]
-        for(let i = 0; i < editGridData.length; i++){
-            newEditGridData[i] = [...editGridData[i]]
-        }
-        let canResolve = resolveSudoku(newEditGridData);
-        if(!canResolve){
-            alert("该数独无法解决")
-            return;
-        }
-        setEditGridData(newEditGridData)
+
+        setEditGridData(draft => {
+            let canResolve = resolveSudoku(draft);
+            if(!canResolve){
+                alert("该数独无法解决")
+                return;
+            }
+        })
     }
 
     // 恢复数独
     const recoverSudoku = ()=>{
-        let newEditGridData = [...initialGridData]
-        for(let i = 0; i < initialGridData.length; i++){
-            newEditGridData[i] = [...initialGridData[i]]
-        }
-        setEditGridData(newEditGridData)
+        // let newEditGridData = [...initialGridData]
+        // for(let i = 0; i < initialGridData.length; i++){
+        //     newEditGridData[i] = [...initialGridData[i]]
+        // }
+        setEditGridData(draft => {
+            draft.forEach((row,rIndex)=>{
+                row.forEach((value,cIndex) => draft[rIndex][cIndex] = initialGridData[rIndex][cIndex] )
+            })
+        })
     }
 
     return (
